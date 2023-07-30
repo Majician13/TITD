@@ -320,7 +320,7 @@ while is_running:
                 try:
                     dice_result = int(dice_label.text)
                     dice_image = dice_images[dice_result - 1]
-                    window.blit(dice_image, (180, 180))
+                    window.blit(dice_image, (10, 210))  # Updated blit position here
                 except ValueError:
                     pass
         manager.process_events(event)
@@ -335,10 +335,11 @@ while is_running:
         try:
             dice_result = int(dice_label.text)  # Fix on line 333
             dice_image = dice_images[dice_result - 1]
-            window.blit(dice_image, (180, 180))
+            window.blit(dice_image, (10, 210))  # Updated blit position here
         except ValueError:
             pass
 
     pygame.display.update()
 
 pygame.quit()
+
