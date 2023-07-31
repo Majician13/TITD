@@ -17,6 +17,9 @@ manager = pygame_gui.UIManager(window_size)
 # Load dice images
 dice_images = [pygame.image.load(os.path.join("images", f"{i}spot.png")) for i in range(1, 7)]
 
+print("Number of dice images loaded:", len(dice_images))
+
+
 # Define the card suits and values
 suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
 values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
@@ -91,30 +94,40 @@ def roll_dice():
 
     if not dice_input:
         # Display an error message or handle the case when no value is entered
-        return
+        return None, None
 
-    num_dice = int(dice_input)
-    dice_values = [random.randint(1, 6) for _ in range(num_dice)]
-    dice_result = max(dice_values)
+    try:
+        num_dice = int(dice_input)
+        dice_values = [random.randint(1, 6) for _ in range(num_dice)]
+        dice_result = max(dice_values)
 
-    # Determine whether it's a success, failure, or partial
-    if dice_result == 6 and dice_values.count(6) > 1:
-        dice_result = "Critical Success"
-    elif dice_result == 6:
-        dice_result = "Success"
-    elif dice_result in (4, 5):
-        dice_result = "Mixed Success"
-    else:
-        dice_result = "Fail"
+        # Determine whether it's a success, failure, or partial
+        if dice_result == 6 and dice_values.count(6) > 1:
+            result_text = "Critical Success"
+        elif dice_result == 6:
+            result_text = "Success"
+        elif dice_result in (4, 5):
+            result_text = "Mixed Success"
+        else:
+            result_text = "Fail"
+            
+        print("Dice Result:", dice_result)
 
-    dice_label.set_text(dice_result)
+        dice_label.set_text(result_text)
+        return result_text, dice_result
+    except ValueError:
+        # Display an error message or handle the case when the input is not a valid integer
+        
+        return None, None
+    
+    
 
 def sort_items_by_size(items, sizes):
     item_sizes = sorted(zip(items, sizes), key=lambda x: int(x[1]), reverse=True)
     sorted_items, sorted_sizes = zip(*item_sizes)
     return sorted_items, sorted_sizes
 
-def place_inventory():
+def place_inventory(dice_result):
     # Clear the previous inventory
     inventory_frame.empty()
 
@@ -305,6 +318,7 @@ conditions_entry = pygame_gui.elements.UITextEntryLine(
 # Main game loop
 clock = pygame.time.Clock()
 is_running = True
+dice_result = None  # Initialize dice_result outside the loop
 while is_running:
     time_delta = clock.tick(60) / 1000.0
 
@@ -317,29 +331,22 @@ while is_running:
             elif event.ui_element == draw_button:
                 draw_card()
             elif event.ui_element == roll_button:
-                try:
-                    dice_result = int(dice_label.text)
-                    dice_image = dice_images[dice_result - 1]
-                    window.blit(dice_image, (10, 210))  # Updated blit position here
-                except ValueError:
-                    pass
+                result_text, dice_result = roll_dice()  # Get both result_text and dice_result
         manager.process_events(event)
 
     manager.update(time_delta)
     window.fill((255, 255, 255))
 
-    manager.draw_ui(window)
+    # Draw the dice image if a dice result is available
+    if dice_result is not None and 1 <= dice_result <= 6:
+        dice_image = dice_images[dice_result - 1]
+        window.blit(dice_image, (400, 210))
 
-    # Draw the dice value as an image (if rolled)
-    if dice_label.text != "":
-        try:
-            dice_result = int(dice_label.text)  # Fix on line 333
-            dice_image = dice_images[dice_result - 1]
-            window.blit(dice_image, (10, 210))  # Updated blit position here
-        except ValueError:
-            pass
+    manager.draw_ui(window)
 
     pygame.display.update()
 
+# Quit the pygame
 pygame.quit()
+
 
