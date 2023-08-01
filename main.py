@@ -2,13 +2,20 @@ import random
 import os
 import pygame
 import pygame_gui
+import dice
+import shuffle
+import drawCard
+
+# Set the correct working directory
+if __name__ == "__main__":
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Initialize pygame
 pygame.init()
 
-# Set up the window
+# Set up the window in resizable mode
 window_size = (800, 600)
-window = pygame.display.set_mode(window_size)
+window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
 pygame.display.set_caption("Torch in the Dark")
 
 # Create the pygame_gui manager
@@ -17,336 +24,159 @@ manager = pygame_gui.UIManager(window_size)
 # Load dice images
 dice_images = [pygame.image.load(os.path.join("images", f"{i}spot.png")) for i in range(1, 7)]
 
-print("Number of dice images loaded:", len(dice_images))
+# Create a list to store the drawn card images
+drawn_card_images = []
 
+# Create a surface to hold the drawn card images
+drawn_cards_surface = pygame.Surface((100, 100))
 
-# Define the card suits and values
-suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
-values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+# Shuffle the deck and test its contents
+shuffled_cards = []
+shuffle.shuffle_cards()
+shuffled_cards = shuffle.shuffled_cards[:]  # Initialize the shuffled_cards list
+print("Initial Deck Contents:")
+print(shuffled_cards)
 
-# Create a deck of cards
-deck = [(value, suit) for value in values for suit in suits]
-
-# Add two jokers to the deck
-joker1 = ('Joker', 'Black')
-joker2 = ('Joker', 'Red')
-deck.append(joker1)
-deck.append(joker2)
-
-# Boolean variable to track whether "Shuffle Deck" has been pressed the first time
-shuffled = False
-
-# Boolean variable to track whether the game is running or not
-game_running = False
-
-# Function to toggle game state and change button text
-def toggle_game_state():
-    global game_running
-    if not game_running:
-        random.shuffle(deck)
-        draw_button.set_text("Draw Card")
-        shuffle_button.set_text("Stop Game")
-        game_running = True
-    else:
-        reset_game()
-        shuffle_button.set_text("Shuffle Deck")
-        game_running = False
-
-def reset_game():
-    global deck
-    deck = [(value, suit) for value in values for suit in suits]
-    deck.append(joker1)
-    deck.append(joker2)
-    card_label.set_text("")
-    dice_label.set_text("")
-    inventory_entry.empty()
-    skills_entry.empty()
-    for checkbox in corruption_checkboxes + stress_checkboxes + stash_checkboxes + xp_checkboxes:
-        checkbox.unselect()
-    draw_button.set_text("Draw Card")
-    draw_button.disable()
-
-    # Clear the inventory grid
-    inventory_frame.empty()
-
-def draw_card():
-    if deck:
-        card = random.choice(deck)
-        deck.remove(card)
-        card_label.set_text(f"{card[0]} of {card[1]}")
-    else:
-        card_label.set_text("No more cards in the deck!")
-
+# Function to shuffle the deck of cards
 def shuffle_deck():
-    global shuffled
-    if not shuffled:
-        random.shuffle(deck)
-        draw_button.set_text("Draw Card")
-        draw_button.enable()
-        shuffled = True
+    shuffle.shuffle_cards()
+    global shuffled_cards
+    shuffled_cards = shuffle.shuffled_cards[:]  # Update the global variable
+    print("Shuffled Deck Contents:")
+    print(shuffled_cards)
+    enable_draw_button()  # Enable the "Draw Card" button after shuffling
+
+
+def enable_draw_button():
+    draw_button.enable()
+
+# Function to draw a card
+def draw_card():
+    global shuffled_cards
+    image, text = drawCard.get_drawn_card_info(shuffled_cards)
+    if image:
+        # Draw the card image on the surface
+        card_position = (20 + (len(drawn_card_images) * 80), 20)  # Adjust the spacing between drawn card images
+        drawn_cards_surface.blit(image, card_position)
+        pygame.display.update()  # Update the display to show the card images
     else:
-        reset_game()
-        shuffle_button.set_text("Shuffle Deck")
-        shuffled = False
+        print(text)
+        draw_button.disable()  # Disable the "Draw Card" button when the deck is empty
 
+
+# Function to roll the dice
 def roll_dice():
-    dice_input = dice_entry.get_text().strip()
+    num_dice = dice_entry.get_text().strip()
 
-    if not dice_input:
-        # Display an error message or handle the case when no value is entered
-        return None, None
+    if not num_dice:
+        return None
 
     try:
-        num_dice = int(dice_input)
+        num_dice = int(num_dice)
         dice_values = [random.randint(1, 6) for _ in range(num_dice)]
-        dice_result = max(dice_values)
-
-        # Determine whether it's a success, failure, or partial
-        if dice_result == 6 and dice_values.count(6) > 1:
-            result_text = "Critical Success"
-        elif dice_result == 6:
-            result_text = "Success"
-        elif dice_result in (4, 5):
-            result_text = "Mixed Success"
-        else:
-            result_text = "Fail"
-            
-        print("Dice Result:", dice_result)
-
-        dice_label.set_text(result_text)
-        return result_text, dice_result
+        return dice_values
     except ValueError:
-        # Display an error message or handle the case when the input is not a valid integer
-        
-        return None, None
-    
-    
-
-def sort_items_by_size(items, sizes):
-    item_sizes = sorted(zip(items, sizes), key=lambda x: int(x[1]), reverse=True)
-    sorted_items, sorted_sizes = zip(*item_sizes)
-    return sorted_items, sorted_sizes
-
-def place_inventory(dice_result):
-    # Clear the previous inventory
-    inventory_frame.empty()
-
-    # Get user-defined inventory items and sizes
-    inventory_data = inventory_entry.get_text().strip().split("\n")
-
-    inventory_items = []
-    inventory_sizes = []
-
-    for data in inventory_data:
-        item, size = data.split(',')
-        inventory_items.append(item.strip())
-        inventory_sizes.append(size.strip())
-
-    # Sort items based on sizes
-    inventory_items, inventory_sizes = sort_items_by_size(inventory_items, inventory_sizes)
-
-    current_row, current_column = 0, 0
-    for i, item in enumerate(inventory_items):
-        size = int(inventory_sizes[i]) if i < len(inventory_sizes) else 1
-        size = max(1, min(size, 3))  # Ensure size is within the range of 1 to 3
-
-        label = pygame_gui.elements.UIImage(
-            relative_rect=pygame.Rect(current_column * 100, current_row * 30, size * 100, 30),
-            image_surface=dice_images[dice_result - 1],
-            manager=manager
-        )
-
-        current_column += size
-        if current_column > 2:
-            current_row += 1
-            current_column = 0
+        return None
 
 # Create buttons and labels
+roll_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(350, window_size[1] - 50, 150, 40),  # Beside the draw button
+    text="Roll Dice",
+    manager=manager
+)
+
+dice_entry_label = pygame_gui.elements.UILabel(
+    relative_rect=pygame.Rect(350, window_size[1] - 125, 280, 20),  # Above the text entry box
+    text="Enter the number of 6-sided dice:",
+    manager=manager
+)
+
+dice_entry = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(350, window_size[1] - 100, 100, 30),  # Bottom left of the label
+    manager=manager
+)
+
+dice_result_images = []
+dice_result_rects = []
+
 shuffle_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(10, 10, 150, 40),
+    relative_rect=pygame.Rect(10, window_size[1] - 50, 150, 40),  # Bottom left
     text="Shuffle Deck",
     manager=manager
 )
 
 draw_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(10, 60, 150, 40),
+    relative_rect=pygame.Rect(180, window_size[1] - 50, 150, 40),  # Beside the shuffle button
     text="Draw Card",
     manager=manager
 )
 
-card_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(10, 110, 400, 40),
-    text="",
-    manager=manager
-)
 
-dice_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(10, 160, 300, 120),
-    manager=manager
-)
-
-dice_entry_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(10, 5, 280, 20),
-    text="Enter the number of 6-sided dice:",
-    manager=manager,
-    container=dice_frame
-)
-
-dice_entry = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(10, 30, 280, 30),
-    manager=manager,
-    container=dice_frame
-)
-
-roll_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(10, 70, 280, 40),
-    text="Roll Dice",
-    manager=manager,
-    container=dice_frame
-)
-
-dice_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(10, 110, 280, 60),
-    text="",
-    manager=manager
-)
-
-inventory_entry_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(10, 290, 400, 20),
-    text="Enter Inventory Items and Sizes (one per line, separated by comma):",
-    manager=manager
-)
-
-inventory_entry = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(10, 315, 380, 100),
-    manager=manager
-)
-
-place_inventory_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(10, 425, 150, 40),
-    text="Place Inventory",
-    manager=manager
-)
-
-inventory_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(10, 475, 380, 100),
-    manager=manager
-)
-
-corruption_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(10, 590, 400, 30),
-    manager=manager
-)
-
-corruption_checkboxes = []
-for i in range(6):
-    checkbox = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(i * 60, 0, 50, 30),
-        text=f"Corruption {i + 1}",
-        manager=manager,
-        container=corruption_frame
-    )
-    corruption_checkboxes.append(checkbox)
-
-stress_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(420, 590, 400, 30),
-    manager=manager
-)
-
-stress_checkboxes = []
-for i in range(6):
-    checkbox = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(i * 60, 0, 50, 30),
-        text=f"Stress {i + 1}",
-        manager=manager,
-        container=stress_frame
-    )
-    stress_checkboxes.append(checkbox)
-
-stash_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(10, 630, 500, 80),
-    manager=manager
-)
-
-stash_checkboxes = []
-for i in range(20):
-    checkbox = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(i % 5 * 90, i // 5 * 40, 80, 30),
-        text=f"Stash {i + 1}",
-        manager=manager,
-        container=stash_frame
-    )
-    stash_checkboxes.append(checkbox)
-
-xp_frame = pygame_gui.elements.UIPanel(
-    relative_rect=pygame.Rect(520, 630, 260, 80),
-    manager=manager
-)
-
-xp_checkboxes = []
-for i in range(10):
-    checkbox = pygame_gui.elements.UIButton(
-        relative_rect=pygame.Rect(i % 5 * 50, i // 5 * 40, 40, 30),
-        text=f"XP {i + 1}",
-        manager=manager,
-        container=xp_frame
-    )
-    xp_checkboxes.append(checkbox)
-
-skills_entry_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(10, 720, 400, 20),
-    text="Enter up to 10 Skills (one per line):",
-    manager=manager
-)
-
-skills_entry = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(10, 745, 380, 150),
-    manager=manager
-)
-
-conditions_entry_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(420, 720, 400, 20),
-    text="Enter up to 10 Conditions (one per line):",
-    manager=manager
-)
-
-conditions_entry = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(420, 745, 380, 150),
-    manager=manager
-)
 
 # Main game loop
 clock = pygame.time.Clock()
 is_running = True
-dice_result = None  # Initialize dice_result outside the loop
 while is_running:
     time_delta = clock.tick(60) / 1000.0
+
+    dice_values = None  # Define dice_values here to avoid NameError
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             is_running = False
-        if event.type == pygame_gui.UI_BUTTON_PRESSED:
-            if event.ui_element == shuffle_button:
-                shuffle_deck()
-            elif event.ui_element == draw_button:
-                draw_card()
-            elif event.ui_element == roll_button:
-                result_text, dice_result = roll_dice()  # Get both result_text and dice_result
-        manager.process_events(event)
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            is_running = False
+        elif event.type == pygame.VIDEORESIZE:
+            # Handle window resize event
+            window_size = event.size
+            window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
+            manager = pygame_gui.UIManager(window_size)
 
+        # Process GUI events
+        if event.type == pygame.USEREVENT:
+            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == shuffle_button:
+                    # Shuffle the cards
+                    shuffle_deck()
+                    drawn_card_images.clear()  # Clear the drawn_card_images list after shuffling
+                elif event.ui_element == draw_button:
+                    # Draw a card
+                    draw_card()
+                elif event.ui_element == roll_button:
+                    # Roll the dice
+                    num_dice = dice_entry.get_text().strip()
+                    dice_values = roll_dice()  # Get the return value from roll_dice()
+                    dice_result_images = dice.roll_dice(num_dice)
+                    dice_result_rects = dice.get_dice_rects(dice_result_images, 350, window_size[1] - 190)
+
+    # Move this block outside the event loop to avoid the NameError
+    if dice_values:
+        dice_result_images.clear()
+        dice_result_rects.clear()
+        for value in dice_values:
+            image = dice_images[value - 1]
+            dice_result_images.append(image)
+            rect = image.get_rect()
+            dice_result_rects.append(rect)
+
+    manager.process_events(event)
     manager.update(time_delta)
     window.fill((255, 255, 255))
 
-    # Draw the dice image if a dice result is available
-    if dice_result is not None and 1 <= dice_result <= 6:
-        dice_image = dice_images[dice_result - 1]
-        window.blit(dice_image, (400, 210))
-
     manager.draw_ui(window)
+
+    # Blit the drawn card surface to the main window
+    window.blit(drawn_cards_surface, (200, window_size[1] - 170))
+
+    # Blit dice result images
+    x_offset = 350
+    y_offset = window_size[1] - 190
+    for rect, image in zip(dice_result_rects, dice_result_images):
+        rect.topleft = (x_offset, y_offset)
+        window.blit(image, rect)
+        x_offset += rect.width + 10
 
     pygame.display.update()
 
 # Quit the pygame
 pygame.quit()
-
-
