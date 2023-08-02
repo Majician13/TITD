@@ -1,5 +1,3 @@
-# shuffle.py
-
 import random
 
 # Define the values and suits for the cards

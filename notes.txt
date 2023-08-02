@@ -1,0 +1,15 @@
+Documentation and Comments: While your code is clear, consider adding docstrings and comments to clarify the purpose of classes, methods, and functions. This will make it easier for other developers (including your future self) to understand the code.
+
+Error Handling: Your code seems to handle errors quite well, but you could consider adding more detailed error messages or handling specific error cases with more descriptive messages.
+
+Separation of Concerns: While your code is well-structured, you could further improve separation of concerns by creating separate folders for each module (e.g., shuffle, drawCard, dice) and placing their respective files inside. This would make it more organized as your application grows.
+
+User Input Validation: In roll_dice and other user input scenarios, consider adding more robust validation for user input. This will prevent unexpected behavior if the user enters invalid input.
+
+Global Variables: In shuffle.py, the shuffled_cards variable is a global variable. Consider encapsulating this inside a class, making it a bit more object-oriented. This might help if you want to extend the functionality later.
+
+Resource Cleanup: In drawCard.py, consider cleaning up the references to images to prevent memory leaks. You can do this by keeping references to PhotoImage objects inside a list or an attribute of the class, which will ensure they are not garbage collected prematurely.
+
+GUI Layout and Aesthetics: Depending on your application's needs, you might want to experiment with GUI layout and aesthetics. You could use more frames and grids to organize different elements more effectively.
+
+Unit Tests: Adding unit tests can help ensure that your functions and classes behave as expected, especially as your project becomes more complex.

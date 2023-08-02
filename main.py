@@ -1,182 +1,80 @@
-import random
 import os
-import pygame
-import pygame_gui
-import dice
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk
 import shuffle
 import drawCard
+import dice
 
-# Set the correct working directory
+# Set the correct images directory path
+IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
+
+# Create the main application window
+# Create the main application window
+class MainApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Torch in the Dark 2.0")
+
+        # Create a frame for the top section (Shuffle Deck, Draw Card, Drawn Card)
+        top_frame = ttk.Frame(self.root)
+        top_frame.pack()
+
+        self.shuffle_button = ttk.Button(top_frame, text="Shuffle Deck", command=self.shuffle_deck)
+        self.shuffle_button.pack(side="left", padx=10, pady=10)
+
+        self.draw_card_app = drawCard.DrawCardApp(top_frame)  # Create DrawCardApp instance
+
+        self.draw_button = ttk.Button(top_frame, text="Draw Card", command=self.draw_card)
+        self.draw_button.pack(side="left", padx=10, pady=10)
+
+        self.card_label = ttk.Label(top_frame, text="", font=("Helvetica", 16))
+        self.card_label.pack(side="left", padx=10, pady=10)
+
+        # Create a frame for the roll dice section
+        self.roll_dice_frame = ttk.LabelFrame(self.root, text="Roll Dice")
+        self.roll_dice_frame.pack(padx=10, pady=10)
+
+        self.roll_dice_app = dice.DiceApp(self.roll_dice_frame)  # Use dice.DiceApp
+
+        # Create the reference button at the bottom
+        self.reference_button = ttk.Button(self.root, text="Reference", command=self.show_reference)
+        self.reference_button.pack(side="bottom", pady=10)
+        
+    def draw_card(self):
+        self.draw_card_app.draw_card(self.card_label)  # Pass the card_label widget
+
+    def shuffle_deck(self):
+        shuffle.shuffle_cards()
+        print("Deck shuffled.")
+
+    def show_reference(self):
+        reference_window = tk.Toplevel(self.root)
+        reference_window.title("Reference Image")
+        
+        screen_width = reference_window.winfo_screenwidth()
+        screen_height = reference_window.winfo_screenheight()
+        initial_width = int(screen_width * 0.5)
+        initial_height = int(screen_height * 0.5)
+        
+        reference_window.geometry(f"{initial_width}x{initial_height}")
+        
+        reference_image = Image.open(os.path.join(IMAGE_DIR, "TITDReference.png"))
+        reference_label = ttk.Label(reference_window)
+        reference_label.pack(fill="both", expand=True)
+        
+        def resize_image(event):
+            new_width = event.width - 10  # Adjust for padding
+            new_height = event.height - 10
+            resized_image = reference_image.resize((new_width, new_height), Image.ANTIALIAS)
+            new_reference_image = ImageTk.PhotoImage(resized_image)
+            reference_label.config(image=new_reference_image)
+            reference_label.image = new_reference_image
+            
+        reference_window.bind("<Configure>", resize_image)
+        resize_image(reference_label.winfo_geometry())
+
 if __name__ == "__main__":
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# Initialize pygame
-pygame.init()
-
-# Set up the window in resizable mode
-window_size = (800, 600)
-window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
-pygame.display.set_caption("Torch in the Dark")
-
-# Create the pygame_gui manager
-manager = pygame_gui.UIManager(window_size)
-
-# Load dice images
-dice_images = [pygame.image.load(os.path.join("images", f"{i}spot.png")) for i in range(1, 7)]
-
-# Create a list to store the drawn card images
-drawn_card_images = []
-
-# Create a surface to hold the drawn card images
-drawn_cards_surface = pygame.Surface((100, 100))
-
-# Shuffle the deck and test its contents
-shuffled_cards = []
-shuffle.shuffle_cards()
-shuffled_cards = shuffle.shuffled_cards[:]  # Initialize the shuffled_cards list
-print("Initial Deck Contents:")
-print(shuffled_cards)
-
-# Function to shuffle the deck of cards
-def shuffle_deck():
-    shuffle.shuffle_cards()
-    global shuffled_cards
-    shuffled_cards = shuffle.shuffled_cards[:]  # Update the global variable
-    print("Shuffled Deck Contents:")
-    print(shuffled_cards)
-    enable_draw_button()  # Enable the "Draw Card" button after shuffling
-
-
-def enable_draw_button():
-    draw_button.enable()
-
-# Function to draw a card
-def draw_card():
-    global shuffled_cards
-    image, text = drawCard.get_drawn_card_info(shuffled_cards)
-    if image:
-        # Draw the card image on the surface
-        card_position = (20 + (len(drawn_card_images) * 80), 20)  # Adjust the spacing between drawn card images
-        drawn_cards_surface.blit(image, card_position)
-        pygame.display.update()  # Update the display to show the card images
-    else:
-        print(text)
-        draw_button.disable()  # Disable the "Draw Card" button when the deck is empty
-
-
-# Function to roll the dice
-def roll_dice():
-    num_dice = dice_entry.get_text().strip()
-
-    if not num_dice:
-        return None
-
-    try:
-        num_dice = int(num_dice)
-        dice_values = [random.randint(1, 6) for _ in range(num_dice)]
-        return dice_values
-    except ValueError:
-        return None
-
-# Create buttons and labels
-roll_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(350, window_size[1] - 50, 150, 40),  # Beside the draw button
-    text="Roll Dice",
-    manager=manager
-)
-
-dice_entry_label = pygame_gui.elements.UILabel(
-    relative_rect=pygame.Rect(350, window_size[1] - 125, 280, 20),  # Above the text entry box
-    text="Enter the number of 6-sided dice:",
-    manager=manager
-)
-
-dice_entry = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(350, window_size[1] - 100, 100, 30),  # Bottom left of the label
-    manager=manager
-)
-
-dice_result_images = []
-dice_result_rects = []
-
-shuffle_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(10, window_size[1] - 50, 150, 40),  # Bottom left
-    text="Shuffle Deck",
-    manager=manager
-)
-
-draw_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(180, window_size[1] - 50, 150, 40),  # Beside the shuffle button
-    text="Draw Card",
-    manager=manager
-)
-
-
-
-# Main game loop
-clock = pygame.time.Clock()
-is_running = True
-while is_running:
-    time_delta = clock.tick(60) / 1000.0
-
-    dice_values = None  # Define dice_values here to avoid NameError
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            is_running = False
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            is_running = False
-        elif event.type == pygame.VIDEORESIZE:
-            # Handle window resize event
-            window_size = event.size
-            window = pygame.display.set_mode(window_size, pygame.RESIZABLE)
-            manager = pygame_gui.UIManager(window_size)
-
-        # Process GUI events
-        if event.type == pygame.USEREVENT:
-            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
-                if event.ui_element == shuffle_button:
-                    # Shuffle the cards
-                    shuffle_deck()
-                    drawn_card_images.clear()  # Clear the drawn_card_images list after shuffling
-                elif event.ui_element == draw_button:
-                    # Draw a card
-                    draw_card()
-                elif event.ui_element == roll_button:
-                    # Roll the dice
-                    num_dice = dice_entry.get_text().strip()
-                    dice_values = roll_dice()  # Get the return value from roll_dice()
-                    dice_result_images = dice.roll_dice(num_dice)
-                    dice_result_rects = dice.get_dice_rects(dice_result_images, 350, window_size[1] - 190)
-
-    # Move this block outside the event loop to avoid the NameError
-    if dice_values:
-        dice_result_images.clear()
-        dice_result_rects.clear()
-        for value in dice_values:
-            image = dice_images[value - 1]
-            dice_result_images.append(image)
-            rect = image.get_rect()
-            dice_result_rects.append(rect)
-
-    manager.process_events(event)
-    manager.update(time_delta)
-    window.fill((255, 255, 255))
-
-    manager.draw_ui(window)
-
-    # Blit the drawn card surface to the main window
-    window.blit(drawn_cards_surface, (200, window_size[1] - 170))
-
-    # Blit dice result images
-    x_offset = 350
-    y_offset = window_size[1] - 190
-    for rect, image in zip(dice_result_rects, dice_result_images):
-        rect.topleft = (x_offset, y_offset)
-        window.blit(image, rect)
-        x_offset += rect.width + 10
-
-    pygame.display.update()
-
-# Quit the pygame
-pygame.quit()
+    root = tk.Tk()
+    app = MainApp(root)
+    root.mainloop()
