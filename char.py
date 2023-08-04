@@ -15,24 +15,56 @@ class CharacterSheetApp:
         subtitle_label = ttk.Label(root, text="Character Sheet", font=("Helvetica", 16))
         subtitle_label.pack()
 
-        self.name_label = ttk.Label(root, text="Name:")
-        self.name_label.pack(pady=5)
-        self.name_entry = ttk.Entry(root)
-        self.name_entry.pack(pady=5)
+        main_frame = ttk.Frame(root)
+        main_frame.pack(padx=10, pady=10, fill="both")
 
-        stress_frame = ttk.LabelFrame(root, text="Stress")
-        stress_frame.pack(padx=10, pady=10)
+        top_frame = ttk.Frame(main_frame)
+        top_frame.pack(fill="x")
 
-        self.stress_vars = [tk.IntVar() for _ in range(6)]
+        # Name Frame
+        name_frame = ttk.Frame(top_frame)
+        name_frame.grid(row=0, column=0, padx=5)
+
+        self.name_label = ttk.Label(name_frame, text="Name:")
+        self.name_label.pack()
+        self.name_entry = ttk.Entry(name_frame)
+        self.name_entry.pack(fill="x")
+
+        # Stress Frame
+        stress_frame = ttk.LabelFrame(top_frame, text="Stress")
+        stress_frame.grid(row=0, column=1, padx=5)
+
+        self.stress_vars = [tk.IntVar(value=0) for _ in range(6)]  # Start as unchecked
         for i, var in enumerate(self.stress_vars):
             ttk.Checkbutton(stress_frame, variable=var).pack(anchor=tk.W)
 
-        corruption_frame = ttk.LabelFrame(root, text="Corruption")
-        corruption_frame.pack(padx=10, pady=10)
+        # Corruption Frame
+        corruption_frame = ttk.LabelFrame(top_frame, text="Corruption")
+        corruption_frame.grid(row=0, column=2, padx=5)
 
-        self.corruption_vars = [tk.IntVar() for _ in range(6)]
+        self.corruption_vars = [tk.IntVar(value=0) for _ in range(6)]  # Start as unchecked
         for i, var in enumerate(self.corruption_vars):
             ttk.Checkbutton(corruption_frame, variable=var).pack(anchor=tk.W)
+
+        # Companions Frame
+        companions_frame = ttk.LabelFrame(top_frame, text="Companions")
+        companions_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=10)
+
+        self.companion_entries = []
+        self.companion_vars = []
+
+        for i in range(5):
+            companion_frame = ttk.Frame(companions_frame)
+            companion_frame.pack(fill="x")
+
+            companion_entry = ttk.Entry(companion_frame)
+            companion_entry.pack(side=tk.LEFT, padx=5)
+            self.companion_entries.append(companion_entry)
+
+            companion_vars = [tk.IntVar(value=0) for _ in range(4)]  # Start as unchecked
+            for var in companion_vars:
+                ttk.Checkbutton(companion_frame, variable=var).pack(side=tk.LEFT)
+            self.companion_vars.append(companion_vars)
 
         # Create the Save button
         self.save_button = ttk.Button(root, text="Save", command=self.save_character_sheet)
@@ -42,43 +74,55 @@ class CharacterSheetApp:
         self.load_button = ttk.Button(root, text="Load", command=self.load_character_sheet)
         self.load_button.pack(side="left", padx=10, pady=10)
 
+        # XP Frame
+        xp_frame = ttk.LabelFrame(top_frame, text="XP")
+        xp_frame.grid(row=0, column=3, padx=5, pady=10, rowspan=2)
+
+        self.xp_vars = [tk.IntVar(value=0) for _ in range(10)]  # Start as unchecked
+        for var in self.xp_vars:
+            ttk.Checkbutton(xp_frame, text="XP", variable=var).pack(anchor=tk.W)
+
     def save_character_sheet(self):
-        character_data = {
+        data = {
             "name": self.name_entry.get(),
             "stress": [var.get() for var in self.stress_vars],
-            "corruption": [var.get() for var in self.corruption_vars]
-            # Add other fields to character_data as needed
+            "corruption": [var.get() for var in self.corruption_vars],
+            "companions": [{
+                "name": entry.get(),
+                "checkboxes": [var.get() for var in vars]
+            } for entry, vars in zip(self.companion_entries, self.companion_vars)],
+            "xp": [var.get() for var in self.xp_vars]
         }
-        filename = simpledialog.askstring("Save Character Sheet", "Enter a filename:", parent=self.root)
+
+        filename = filedialog.asksaveasfilename(defaultextension=".json", initialdir="./games")
         if filename:
-            filename += ".json"
-            with open(filename, "w") as f:
-                json.dump(character_data, f)
-            print(f"Character sheet saved as '{filename}'.")
+            with open(filename, "w") as file:
+                json.dump(data, file)
 
     def load_character_sheet(self):
-        existing_files = [filename for filename in os.listdir() if filename.endswith(".json")]
-        if existing_files:
-            chosen_file = filedialog.askopenfilename(title="Choose Character Sheet to Load", filetypes=[("JSON Files", "*.json")])
-            if chosen_file:
-                with open(chosen_file, "r") as f:
-                    character_data = json.load(f)
+        filename = filedialog.askopenfilename(defaultextension=".json", initialdir="./games")
+        if filename:
+            with open(filename, "r") as file:
+                data = json.load(file)
 
-                self.name_entry.delete(0, tk.END)
-                self.name_entry.insert(0, character_data["name"])
+            self.name_entry.delete(0, tk.END)
+            self.name_entry.insert(0, data["name"])
 
-                for i, var in enumerate(self.stress_vars):
-                    var.set(character_data["stress"][i])
+            for var, value in zip(self.stress_vars, data["stress"]):
+                var.set(value)
 
-                for i, var in enumerate(self.corruption_vars):
-                    var.set(character_data["corruption"][i])
+            for var, value in zip(self.corruption_vars, data["corruption"]):
+                var.set(value)
 
-                # Add code to update other fields as needed
+            for entry, companions_data in zip(self.companion_entries, data["companions"]):
+                entry.delete(0, tk.END)
+                entry.insert(0, companions_data["name"])
 
-                print(f"Character sheet loaded from '{chosen_file}'.")
+                for var, value in zip(self.companion_vars[0], companions_data["checkboxes"]):
+                    var.set(value)
 
-        else:
-            print("No saved character sheets found.")
+            for var, value in zip(self.xp_vars, data["xp"]):
+                var.set(value)
 
 if __name__ == "__main__":
     root = tk.Tk()

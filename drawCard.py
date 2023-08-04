@@ -38,6 +38,7 @@ class DrawCardApp:
             img = ImageTk.PhotoImage(self.card_images[drawn_card])
             card_label.config(image=img, text=f"Drawn Card: {drawn_card}")
             card_label.image = img
+            card_label.img = img  # Store reference to the img object to prevent it from being garbage collected
         else:
-            text = "Card deck is empty"
+            text = "Drawn Card: None"
             card_label.config(text=text, image=None)
