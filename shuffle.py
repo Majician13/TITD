@@ -12,6 +12,7 @@ def shuffle_cards():
         all_cards = [value + suit for value in values for suit in suits]
         shuffled_cards = all_cards.copy()
         random.shuffle(shuffled_cards)
+        print('Shuffled Cards: ', shuffled_cards)
     except Exception as e:
         print("Error shuffling cards:", e)
 

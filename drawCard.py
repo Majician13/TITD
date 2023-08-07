@@ -1,44 +1,34 @@
+from PIL import Image, ImageTk
 import os
 import tkinter as tk
 from tkinter import ttk
-from PIL import Image, ImageTk
 import shuffle
 
-# Define the values and suits for the cards
-values = ['a', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'j', 'q', 'k']
-suits = ['c', 'h', 's', 'd']
-
-# Set the correct images directory path
-IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images", "cards")
-
-# Function to load card images
-def load_card_images():
-    card_images = {}
-    for value in values:
-        for suit in suits:
-            image_path = os.path.join(IMAGE_DIR, f"{value}{suit}.png")
-            try:
-                img = Image.open(image_path)
-                card_images[value + suit] = img
-            except Exception as e:
-                print(f"Error loading image '{image_path}': {e}")
-    return card_images
-
-# Main application window for drawing cards
 class DrawCardApp:
-    def __init__(self, root):
+    def __init__(self, root, journal_app):
         self.root = root
+        self.journal_app = journal_app
+        self.card_label = None
 
-        self.shuffled_deck = shuffle.shuffled_cards
-        self.card_images = load_card_images()
+        self.draw_button = ttk.Button(self.root, text="Draw Card", command=self.draw_card)
+        self.draw_button.pack(side="left", padx=10, pady=10)
 
-    def draw_card(self, card_label):
+    def draw_card(self):
         drawn_card = shuffle.draw_next_card()
         if drawn_card:
-            img = ImageTk.PhotoImage(self.card_images[drawn_card])
-            card_label.config(image=img, text=f"Drawn Card: {drawn_card}")
-            card_label.image = img
-            card_label.img = img  # Store reference to the img object to prevent it from being garbage collected
-        else:
-            text = "Drawn Card: None"
-            card_label.config(text=text, image=None)
+            card_image_path = os.path.join("images", "cards", drawn_card + ".png")
+            print(drawn_card)
+            if os.path.exists(card_image_path):
+                card_image = Image.open(card_image_path)
+                card_photo = ImageTk.PhotoImage(card_image)
+
+                if self.card_label:
+                    self.card_label.destroy()
+
+                self.card_label = ttk.Label(self.root, image=card_photo)
+                self.card_label.photo = card_photo
+                self.card_label.pack()
+
+                if self.journal_app:
+                    self.journal_app.add_entry("Draw Card", f"Drawn Card: {drawn_card}", "red")
+                    self.journal_app.clear_entries("Draw Card Value")  # Clear previous "Card Value" entries
