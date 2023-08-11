@@ -38,11 +38,9 @@ class DiceApp:
         self.result_label.pack()
 
     def roll(self):
-        num_dice = int(self.num_dice_var.get())  # Convert the string to an integer
-        zero_negative = self.zero_negative_var.get()  # Get the value of the Zero/Negative Dice checkbox
-        print("Zero/Negative Dice:", zero_negative)  # Debugging print
+        num_dice = int(self.num_dice_var.get())
+        zero_negative = self.zero_negative_var.get()
         dice_values = roll_dice(num_dice)
-        print("Rolled Dice Values:", dice_values)  # Debugging print
         self.display_dice(dice_values)
 
     def display_dice(self, dice_values):
@@ -100,8 +98,16 @@ class DiceApp:
 
 
 
-# Rest of the code
 def roll_dice(num_dice):
+    """
+    Simulate rolling dice.
+    
+    Args:
+        num_dice (int): The number of dice to roll.
+        
+    Returns:
+        list: List of rolled dice values.
+    """
     dice_values = [random.randint(1, 6) for _ in range(num_dice)]  # Adjust range to 0-5
     return dice_values
 

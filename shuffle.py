@@ -6,18 +6,25 @@ suits = ['c', 'h', 's', 'd']
 shuffled_cards = []
 
 def shuffle_cards():
-    """Shuffle the deck of cards."""
+    """
+    Shuffle the deck of cards.
+    """
     global shuffled_cards
     try:
         all_cards = [value + suit for value in values for suit in suits]
         shuffled_cards = all_cards.copy()
         random.shuffle(shuffled_cards)
-        print('Shuffled Cards: ', shuffled_cards)
+        print('Shuffled Cards:', shuffled_cards)
     except Exception as e:
         print("Error shuffling cards:", e)
 
 def draw_next_card():
-    """Draw the next card from the shuffled deck."""
+    """
+    Draw the next card from the shuffled deck.
+    
+    Returns:
+        str or None: The drawn card (in the format 'value' + 'suit'), or None if the deck is empty.
+    """
     if shuffled_cards:
         return shuffled_cards.pop(0)
     else:

@@ -10,7 +10,8 @@ import journal
 class CharacterSheetApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Character Sheet")        
+        self.root.title("Character Sheet")
+        self.main_app = None  # Add a main_app attribute   
         
         self.journal_window = None  # Define the journal_window attribute
         
@@ -126,10 +127,11 @@ class CharacterSheetApp:
             ttk.Checkbutton(xp_frame, text="XP", variable=var).pack(anchor=tk.W)
     
     def open_journal(self):
-        if self.journal_window is None:
+        if self.main_app and self.main_app.journal_app:
             journal_window = tk.Toplevel(self.root)
             journal_window.title("Journal")
-            self.journal_app = journal.JournalApp(journal_window)
+            journal_app = journal.JournalApp(journal_window)
+
 
     
     # Conditions Functions        
