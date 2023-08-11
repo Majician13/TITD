@@ -42,19 +42,19 @@ class MainApp:
         self.roll_dice_frame = ttk.LabelFrame(self.root, text="Roll Dice")
         self.roll_dice_frame.pack(padx=10, pady=10)
 
-        self.roll_dice_app = dice.DiceApp(self.roll_dice_frame)  # Use dice.DiceApp
+        self.initialize_journal_app()  # Call the initialization method
+        self.roll_dice_app = dice.DiceApp(self.roll_dice_frame, self.journal_app)  # Use dice.DiceApp
 
         # Create a frame for the buttons at the bottom
         bottom_frame = ttk.Frame(self.root)
         bottom_frame.pack(side="bottom", pady=10)
         
-        # Create an instance of the journal
-        self.initialize_journal_app()  # Call the initialization method
-        
-        self.character_sheet_app = char.CharacterSheetApp(root)  # Create an instance of the character sheet app
+        # Create an instance of the character sheet app
+        self.character_sheet_app = char.CharacterSheetApp(root)
         self.character_sheet_app.main_app = self  # Set the main_app attribute
 
-        self.journal_app.text.pack(fill="both", expand=True, padx=10, pady=10)  # Place journal above the buttons
+        # Create an instance of the journal
+        self.open_journal()
 
         self.character_button = ttk.Button(bottom_frame, text="Character", command=self.open_character_sheet)
         self.character_button.pack(side="left", padx=10)
@@ -62,9 +62,6 @@ class MainApp:
         self.reference_button = ttk.Button(bottom_frame, text="Reference", command=self.show_reference)
         self.reference_button.pack(side="right", padx=10)
 
-        # Create an instance of the journal
-        self.open_journal()
-        
         # Create the DrawCardApp instance
         self.draw_card_app = drawCard.DrawCardApp(top_frame, shuffle.draw_next_card, self.journal_app)
         self.draw_button = self.draw_card_app.draw_button
@@ -81,14 +78,6 @@ class MainApp:
     def initialize_draw_card_app(self):
         if not hasattr(self, 'draw_card_app'):
             self.draw_card_app = drawCard.DrawCardApp(self.root, self.journal_app)  # Pass 'root' and 'journal_app' as arguments
-
-    def draw_card(self):
-        self.initialize_draw_card_app()  # Initialize DrawCardApp if not already
-        drawn_card = self.draw_card_app.draw_card()  # Call the draw_card method
-        if drawn_card:
-            print(f"Drawn Card: {drawn_card}")
-            if self.journal_app:  # Check if journal_app exists before adding an entry
-                self.journal_app.add_entry("Draw Card", f"Drawn Card: {drawn_card}", "red")
 
     def shuffle_deck(self):
         shuffle.shuffle_cards()  # Corrected call to shuffle_cards function
@@ -124,7 +113,6 @@ class MainApp:
         except Exception as e:
             print("Error displaying reference image:", e)
 
-
     def open_journal(self):
         if self.journal_app:
             self.journal_app.show_journal_window()
@@ -134,8 +122,6 @@ class MainApp:
         character_sheet_window.title("Character Sheet")
         self.character_sheet_app = char.CharacterSheetApp(character_sheet_window)
         self.character_sheet_app.main_app = self  # Set the main_app attribute
-
-
 
 if __name__ == "__main__":
     root = tk.Tk()

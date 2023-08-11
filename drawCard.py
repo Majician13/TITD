@@ -9,7 +9,9 @@ class DrawCardApp:
         self.draw_card_function = draw_card_function
         self.journal_app = journal_app
         self.card_label = None
+        
 
+        
         self.draw_button = ttk.Button(self.root, text="Draw Card", command=self.draw_card)
         self.draw_button.pack(side="left", padx=10, pady=10)
 
@@ -30,4 +32,5 @@ class DrawCardApp:
 
                 if self.journal_app:
                     self.journal_app.add_entry("Draw Card", f"Drawn Card: {drawn_card}", "red")
+
                     self.journal_app.clear_entries("Draw Card Value")  # Clear previous "Card Value" entries

@@ -39,10 +39,14 @@ class JournalApp:
             self.text.config(state=tk.DISABLED)
     
     def add_entry(self, category, entry, color):
+        # Clear previous entries with the specified tag
+        self.text.tag_remove("entry", "1.0", tk.END)
+        
         formatted_entry = f"[{category}] {entry}\n"
         self.text.config(state=tk.NORMAL)
         self.text.insert(tk.END, formatted_entry, color)
         self.text.config(state=tk.DISABLED)
+
 
     def save_journal(self):
         file_path = filedialog.asksaveasfilename(

@@ -13,3 +13,21 @@ Resource Cleanup: In drawCard.py, consider cleaning up the references to images 
 GUI Layout and Aesthetics: Depending on your application's needs, you might want to experiment with GUI layout and aesthetics. You could use more frames and grids to organize different elements more effectively.
 
 Unit Tests: Adding unit tests can help ensure that your functions and classes behave as expected, especially as your project becomes more complex.
+
+MY NOTES:
+    COMPLETED:
+    Create "Journal"
+        Cards autoshow
+    Create 10 Skills/Conditions on char.py
+    Create 20 Stash on char.py
+    
+
+    TO-DO:
+    Have Cards/Dice (and results) show in "Journal"
+    Create option to choose which "story"
+    Have cards reveal correct "story" feature based on "story" choice. 
+    Create button to place card back on bottom of deck. 
+        Also need to be able to shuffle what's left of deck and not re-add to it.    
+    Create "Inventory"
+    Create area for map (importing images and ability to place tokens on it and move them)
+    Create a level modifier on Char.py

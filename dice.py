@@ -5,8 +5,11 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 
 class DiceApp:
-    def __init__(self, root):
+    def __init__(self, root, journal_app):
         self.root = root
+        self.journal_app = journal_app
+        
+        
 
         # Load dice images
         self.dice_images = [Image.open(os.path.join("images", "dice", f"{i}spot.png")) for i in range(1, 7)]
@@ -41,8 +44,12 @@ class DiceApp:
         num_dice = int(self.num_dice_var.get())
         zero_negative = self.zero_negative_var.get()
         dice_values = roll_dice(num_dice)
+        result_text = self.get_result_text(dice_values[0], dice_values, zero_negative)
+        self.result_label.config(text=result_text)
+        self.journal_app.add_entry("Dice Roll", f"Dice Roll: {dice_values}", "blue")  # Add dice roll to journal
+        self.journal_app.add_entry("Dice Roll Result", f"Result: {result_text}", "blue")
         self.display_dice(dice_values)
-
+        
     def display_dice(self, dice_values):
         # Clear previous text
         self.result_label.config(text="")
