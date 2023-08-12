@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import simpledialog, filedialog
+from tkinter import filedialog
 import json
-import os
 import skills
 import conditions
 import journal
@@ -11,10 +10,9 @@ class CharacterSheetApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Character Sheet")
-        self.main_app = None  # Add a main_app attribute   
-        
-        self.journal_window = None  # Define the journal_window attribute
-        
+        self.main_app = None
+        self.journal_window = None
+
         title_label = ttk.Label(root, text="A Torch in the Dark", font=("Helvetica", 20, "bold"))
         title_label.pack(pady=10)
 
@@ -25,37 +23,24 @@ class CharacterSheetApp:
         main_frame.pack(padx=10, pady=10, fill="both")
 
         top_frame = ttk.Frame(main_frame)
-        top_frame.pack(fill="x")
-        
-        # Skills/Meanings Frame
-        self.selected_skills = []  # To store selected skills/meanings
-
-        self.skills_frame = ttk.LabelFrame(root, text="Skills/Meanings")
-        self.skills_frame.pack(padx=10, pady=10)
-
-        self.skill_dropdown = ttk.Combobox(self.skills_frame, values=list(skills.SKILLS.keys()))
-        self.skill_dropdown.bind("<<ComboboxSelected>>", self.add_skill)
-        self.skill_dropdown.pack(padx=10, pady=10)
+        top_frame.grid(row=0, column=0, sticky="ew")  # Use grid manager for top_frame
 
         # Name Frame
-        name_frame = ttk.Frame(top_frame)
-        name_frame.grid(row=0, column=0, padx=5)
+        self.name_label = ttk.Label(top_frame, text="Name:")
+        self.name_label.grid(row=0, column=0)  # Use grid manager for name_label
+        self.name_entry = ttk.Entry(top_frame)
+        self.name_entry.grid(row=0, column=1, sticky="ew")  # Use grid manager for name_entry
 
-        self.name_label = ttk.Label(name_frame, text="Name:")
-        self.name_label.pack()
-        self.name_entry = ttk.Entry(name_frame)
-        self.name_entry.pack(fill="x") 
-        
         # Stash Frame
-        stash_frame = ttk.Frame(name_frame)
-        stash_frame.pack(fill="x")
+        stash_frame = ttk.Frame(top_frame)
+        stash_frame.grid(row=1, column=0, columnspan=2, sticky="ew")  # Use grid manager for stash_frame
 
         self.stash_label = ttk.Label(stash_frame, text="Stash:")
-        self.stash_label.pack(side=tk.LEFT)
+        self.stash_label.grid(row=0, column=0)  # Use grid manager for stash_label
         self.stash_values = list(range(21))  # 0 to 20
         self.stash_dropdown = ttk.Combobox(stash_frame, values=self.stash_values, state="readonly")
         self.stash_dropdown.set(0)  # Start stash off at 0
-        self.stash_dropdown.pack(side=tk.LEFT)
+        self.stash_dropdown.grid(row=0, column=1)  # Use grid manager for stash_dropdown
 
         # Stress Frame
         stress_frame = ttk.LabelFrame(top_frame, text="Stress")
@@ -127,14 +112,9 @@ class CharacterSheetApp:
             ttk.Checkbutton(xp_frame, text="XP", variable=var).pack(anchor=tk.W)
     
     def open_journal(self):
-        if self.main_app and self.main_app.journal_app:
-            journal_window = tk.Toplevel(self.root)
-            journal_window.title("Journal")
-            journal_app = journal.JournalApp(journal_window)
+        if self.main_app:
+            self.main_app.open_journal()
 
-
-    
-    # Conditions Functions        
     def add_condition(self, event):
         condition = self.condition_dropdown.get()
         if condition and len(self.selected_conditions) < 3:
@@ -161,6 +141,7 @@ class CharacterSheetApp:
         self.selected_conditions.remove(condition)
         self.update_selected_conditions()
         self.condition_dropdown.configure(state="normal")
+
     
     # Skill Functions
     def add_skill(self, event):
