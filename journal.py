@@ -5,22 +5,17 @@ class JournalApp:
     def __init__(self, root):
         self.root = root
         
+        
         # Add a text entry box above the journal text area
         self.entry_box = ttk.Entry(root)
         self.entry_box.pack(fill="x", padx=10, pady=(10, 0))  # Add padding only at the top
 
         # Add an "Enter" button next to the entry box
         self.enter_button = ttk.Button(root, text="Enter", command=self.move_text_to_journal)
-        self.enter_button.pack(side="left", padx=10, pady=5)
+        self.enter_button.pack(side="top", padx=10, pady=5)
 
         self.text = scrolledtext.ScrolledText(root, wrap=tk.WORD, state=tk.DISABLED)
         self.text.pack(fill="both", expand=True, padx=10, pady=10)
-
-        save_button = ttk.Button(root, text="Save", command=self.save_journal)
-        save_button.pack(side="left", padx=10, pady=10)
-
-        load_button = ttk.Button(root, text="Load", command=self.load_journal)
-        load_button.pack(side="left", padx=10, pady=10)
 
     def show_journal_window(self):
         self.root.deiconify()  # Show the journal window
@@ -37,6 +32,10 @@ class JournalApp:
             self.text.config(state=tk.NORMAL)
             self.text.insert(tk.END, entry_text + "\n")
             self.text.config(state=tk.DISABLED)
+    
+    def clear_entries(self, category):
+        # Clear previous entries with the specified category tag
+        self.text.tag_remove(category, "1.0", tk.END)
     
     def add_entry(self, category, entry, color):
         # Clear previous entries with the specified tag

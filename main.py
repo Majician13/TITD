@@ -5,8 +5,8 @@ from PIL import Image, ImageTk
 import shuffle
 import drawCard
 import dice
-import char
-import journal
+from char import CharacterSheetApp
+from journal import JournalApp  # Import only the JournalApp class
 
 # Set the correct images directory path
 IMAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
@@ -16,17 +16,13 @@ class MainApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Torch in the Dark 2.0")
-
-        # Initialize journal_app attribute
-        self.journal_window = None
-        self.journal_app = None        
-
+        
         # Create a frame for the top section (Shuffle Deck, Draw Card, Drawn Card)
         top_frame = ttk.Frame(self.root)
-        top_frame.pack()
+        top_frame.pack(side="left", padx=10, pady=10)
 
         self.shuffle_button = ttk.Button(top_frame, text="Shuffle Deck", command=self.shuffle_deck)
-        self.shuffle_button.pack(side="left", padx=10, pady=10)        
+        self.shuffle_button.pack(side="top", padx=10, pady=10)
 
         # Load a default card image (place this next to the "Draw Card" button)
         default_card_image_path = os.path.join("images", "cards", "default.png")
@@ -38,46 +34,75 @@ class MainApp:
             self.default_card_label.photo = default_card_photo
             self.default_card_label.pack(side="left", padx=10, pady=10)
 
+        # Create frames for left and right sections
+        left_frame = ttk.Frame(self.root)
+        left_frame.pack(side="left", padx=10, pady=10, fill="both")
+
+        right_frame = ttk.Frame(self.root)
+        right_frame.pack(side="right", padx=10, pady=10, fill="both")
+
+        # Create an instance of the character sheet app and pass the right_frame as a parent
+        self.character_sheet_app = CharacterSheetApp(right_frame, self)  # Use the imported CharacterSheetApp class
+
         # Create a frame for the roll dice section
         self.roll_dice_frame = ttk.LabelFrame(self.root, text="Roll Dice")
-        self.roll_dice_frame.pack(padx=10, pady=10)
+        self.roll_dice_frame.pack(side="left", padx=10, pady=10)
 
-        self.initialize_journal_app()  # Call the initialization method
-        self.roll_dice_app = dice.DiceApp(self.roll_dice_frame, self.journal_app)  # Use dice.DiceApp
+        # Create the JournalApp instance for the separate journal window
+        journal_window = tk.Toplevel(root)
+        journal_window.title("Journal")
+        self.journal_app = JournalApp(journal_window)
+
+        # Create the DiceApp instance and connect it to the frame
+        self.roll_dice_app = dice.DiceApp(self.roll_dice_frame, self.journal_app)
+
 
         # Create a frame for the buttons at the bottom
         bottom_frame = ttk.Frame(self.root)
         bottom_frame.pack(side="bottom", pady=10)
-        
-        # Create an instance of the character sheet app
-        self.character_sheet_app = char.CharacterSheetApp(root)
-        self.character_sheet_app.main_app = self  # Set the main_app attribute
 
-        # Create an instance of the journal
-        self.open_journal()
+        # Save Button
+        save_button = ttk.Button(bottom_frame, text="Save", command=self.save_data)
+        save_button.pack(side="left", padx=10, pady=10)
 
-        self.character_button = ttk.Button(bottom_frame, text="Character", command=self.open_character_sheet)
-        self.character_button.pack(side="left", padx=10)
+        # Load Button
+        load_button = ttk.Button(bottom_frame, text="Load", command=self.load_data)
+        load_button.pack(side="left", padx=10, pady=10)
 
-        self.reference_button = ttk.Button(bottom_frame, text="Reference", command=self.show_reference)
-        self.reference_button.pack(side="right", padx=10)
+        # Journal Button
+        journal_button = ttk.Button(bottom_frame, text="Journal", command=self.open_journal)
+        journal_button.pack(side="left", padx=10, pady=10)
+
+        # Reference Button
+        reference_button = ttk.Button(bottom_frame, text="Reference", command=self.show_reference)
+        reference_button.pack(side="left", padx=10, pady=10)
 
         # Create the DrawCardApp instance
         self.draw_card_app = drawCard.DrawCardApp(top_frame, shuffle.draw_next_card, self.journal_app)
         self.draw_button = self.draw_card_app.draw_button
         self.draw_button.pack(side="left", padx=10, pady=10)
 
-        self.card_label = self.draw_card_app.card_label
-
-    def initialize_journal_app(self):
-        if not self.journal_app:
-            journal_window = tk.Toplevel(self.root)
-            journal_window.title("Journal")
-            self.journal_app = journal.JournalApp(journal_window)
     
-    def initialize_draw_card_app(self):
-        if not hasattr(self, 'draw_card_app'):
-            self.draw_card_app = drawCard.DrawCardApp(self.root, self.journal_app)  # Pass 'root' and 'journal_app' as arguments
+
+    def save_data(self):
+        # Get character sheet data (assuming you have a method to retrieve character sheet data)
+        character_data = self.character_sheet_app.get_character_data()  # Use the method you define in CharacterSheetApp
+
+        # Save data to data_manager
+        data_manager.save_data(character_data, self.journal_app.get_journal_text())
+
+        # Save data to a file
+        data_manager.save_to_file("saved_data.json")
+
+    def load_data(self):
+        # Load data from the file
+        data_manager.load_from_file("saved_data.json")
+
+        # # Set character sheet data (assuming you have a method to set character sheet data)
+        # self.character_sheet_app.set_character_data(data_manager.character_data)
+
+        # Set journal text
+        self.journal_app.set_journal_text(data_manager.journal_data)
 
     def shuffle_deck(self):
         shuffle.shuffle_cards()  # Corrected call to shuffle_cards function
@@ -114,14 +139,12 @@ class MainApp:
             print("Error displaying reference image:", e)
 
     def open_journal(self):
-        if self.journal_app:
-            self.journal_app.show_journal_window()
+        if not self.journal_app:
+            journal_window = tk.Toplevel(self.root)
+            journal_window.title("Journal")
+            self.journal_app = JournalApp(journal_window)
 
-    def open_character_sheet(self):
-        character_sheet_window = tk.Toplevel(self.root)
-        character_sheet_window.title("Character Sheet")
-        self.character_sheet_app = char.CharacterSheetApp(character_sheet_window)
-        self.character_sheet_app.main_app = self  # Set the main_app attribute
+        self.journal_app.show_journal_window()  # Make sure to call this method to show the journal window
 
 if __name__ == "__main__":
     root = tk.Tk()
